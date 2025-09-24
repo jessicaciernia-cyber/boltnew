@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Moon, Sun, Calendar, MapPin, ArrowLeft, User, Home, MessageSquare, Send } from 'lucide-react';
+import { Star, Moon, Sun, Calendar, MapPin, ArrowLeft, User, Home, MessageSquare, Send, Sparkles, Bell, Settings, Heart, BookOpen, Target, Clock, Camera, Share2, Award, Gift, Play, Pause } from 'lucide-react';
 import AuthView from './components/AuthView';
 import CosmicBackground from './components/CosmicBackground';
 import { useAuth } from './hooks/useAuth';
 import { useProfile } from './hooks/useProfile';
+import axios from 'axios';
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const ASTROLOGY_BASE_URL = 'https://api.vedicastroapi.com/v3-json';
+const ASTROLOGY_API_KEY = import.meta.env.VITE_ASTROLOGY_API_KEY;
 
 const CosmicApp = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -297,133 +306,133 @@ const CosmicApp = () => {
       const fallbackInsight = `${userProfile.name}, the universe is aligning perfectly for your manifestation journey today. With ${moonPhase} energy and ${crystalOfDay.split(' - ')[0]} supporting you, focus on trusting your intuition. Today's magic happens when you embrace both your inner wisdom and take inspired action. ✨`;
       setTodaysPersonalizedInsight(fallbackInsight);
     }
-  const Dashboard = () => (
-    <CosmicBackground>
-      <div className="relative z-10 p-6 pb-24">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white" style={{ textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>Good Morning, {userProfile.name} ✨</h1>
-            <p className="text-slate-300">Day {currentStreak} of your journey</p>
-          </div>
-          <div className="flex space-x-2">
-            <div className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30">
-              <Bell className="w-5 h-5 text-cyan-300" />
-            </div>
-            <button 
-              onClick={signOut}
-              className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30 hover:bg-black/30 transition-all"
-            >
-              <User className="w-5 h-5 text-red-300" />
-            </button>
-            <button 
-              onClick={() => setCurrentView('profile')}
-              className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30 hover:bg-black/30 transition-all"
-            >
-              <Settings className="w-5 h-5 text-violet-300" />
-            </button>
-          </div>
-        </div>
+  };
 
-        <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 mb-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <Moon className="w-6 h-6 text-cyan-300 mx-auto mb-1" />
-              <p className="text-xs text-cyan-200">{moonPhase}</p>
-            </div>
-            <div>
-              <Sparkles className="w-6 h-6 text-violet-300 mx-auto mb-1" />
-              <p className="text-xs text-violet-200">{currentStreak} Day Streak</p>
-            </div>
-            <div>
-              <Star className="w-6 h-6 text-white mx-auto mb-1" />
-              <p className="text-xs text-slate-200">High Vibe</p>
-            </div>
-          </div>
+  const DashboardView = () => (
+    <div className="relative z-10 p-6 pb-24">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white" style={{ textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>Good Morning, {userProfile.name} ✨</h1>
+          <p className="text-slate-300">Day {currentStreak} of your journey</p>
         </div>
-
-        <div className="bg-black/20 backdrop-blur-md rounded-3xl p-6 mb-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
-          <div className="flex items-center mb-4">
-            <Sparkles className="w-6 h-6 text-cyan-300 mr-2" />
-            <h2 className="text-xl font-semibold text-white">Your Personal Cosmic Insight</h2>
-            {profile?.sun_sign && <span className="ml-2 text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full">Personalized</span>}
+        <div className="flex space-x-2">
+          <div className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30">
+            <Bell className="w-5 h-5 text-cyan-300" />
           </div>
-          <p className="text-slate-100 text-lg leading-relaxed mb-4">
-            {todaysPersonalizedInsight || "Generating your personalized cosmic guidance using real astrological data..."}
-          </p>
-          <div className="flex justify-between items-center">
-            <div className="bg-violet-500/20 rounded-2xl p-3 border border-cyan-400/20 flex-1 mr-3">
-              <p className="text-sm text-cyan-200">✨ Crystal Energy: {crystalOfDay}</p>
-              {profile?.sun_sign && (
-                <p className="text-xs text-violet-200 mt-1">🌟 {profile.sun_sign} Sun • {profile.moon_sign} Moon</p>
-              )}
-            </div>
-            <button 
-              onClick={() => {
-                generatePersonalizedInsight();
-              }}
-              className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all text-sm"
-            >
-              Refresh Insight
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <QuickActionCard 
-            icon={Heart} 
-            title="Check-In" 
-            subtitle={hasCheckedIn ? "Complete" : "Set intention"}
-            onClick={() => setCurrentView('checkin')}
-            completed={hasCheckedIn}
-          />
-          <QuickActionCard 
-            icon={Sparkles} 
-            title="Affirmation" 
-            subtitle="Daily power"
-            onClick={() => setCurrentView('affirmation')}
-          />
-          <QuickActionCard 
-            icon={BookOpen} 
-            title="Journal" 
-            subtitle="Sacred space"
-            onClick={() => setCurrentView('journal')}
-          />
-          <QuickActionCard 
-            icon={Target} 
-            title="Vision Board" 
-            subtitle="Manifest dreams"
-            onClick={() => setCurrentView('visionboard')}
-          />
-        </div>
-
-        <div className="bg-black/20 backdrop-blur-md rounded-3xl p-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
-          <h3 className="text-lg font-semibold text-white mb-4">Your Challenges</h3>
-          {challenges.slice(0, 2).map(challenge => (
-            <div key={challenge.id} className="mb-4 last:mb-0">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-medium">{challenge.title}</span>
-                <span className="text-cyan-200 text-sm">{challenge.progress}/{challenge.total}</span>
-              </div>
-              <div className="bg-slate-800/50 rounded-full h-2 border border-violet-500/30">
-                <div 
-                  className="bg-gradient-to-r from-violet-400 via-purple-400 to-cyan-400 h-2 rounded-full transition-all shadow-sm"
-                  style={{ 
-                    width: `${(challenge.progress / challenge.total) * 100}%`,
-                    filter: 'drop-shadow(0 0 4px rgba(139, 92, 246, 0.6))'
-                  }}
-                />
-              </div>
-            </div>
-          ))}
           <button 
-            onClick={() => setCurrentView('challenges')}
-            className="w-full mt-4 text-cyan-300 text-sm hover:text-cyan-200 transition-colors"
+            onClick={signOut}
+            className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30 hover:bg-black/30 transition-all"
           >
-            View All Challenges →
+            <User className="w-5 h-5 text-red-300" />
+          </button>
+          <button 
+            onClick={() => setCurrentView('profile')}
+            className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30 hover:bg-black/30 transition-all"
+          >
+            <Settings className="w-5 h-5 text-violet-300" />
           </button>
         </div>
       </div>
-    </CosmicBackground>
+
+      <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 mb-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <Moon className="w-6 h-6 text-cyan-300 mx-auto mb-1" />
+            <p className="text-xs text-cyan-200">{moonPhase}</p>
+          </div>
+          <div>
+            <Sparkles className="w-6 h-6 text-violet-300 mx-auto mb-1" />
+            <p className="text-xs text-violet-200">{currentStreak} Day Streak</p>
+          </div>
+          <div>
+            <Star className="w-6 h-6 text-white mx-auto mb-1" />
+            <p className="text-xs text-slate-200">High Vibe</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-black/20 backdrop-blur-md rounded-3xl p-6 mb-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
+        <div className="flex items-center mb-4">
+          <Sparkles className="w-6 h-6 text-cyan-300 mr-2" />
+          <h2 className="text-xl font-semibold text-white">Your Personal Cosmic Insight</h2>
+          {profile?.sun_sign && <span className="ml-2 text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full">Personalized</span>}
+        </div>
+        <p className="text-slate-100 text-lg leading-relaxed mb-4">
+          {todaysPersonalizedInsight || "Generating your personalized cosmic guidance using real astrological data..."}
+        </p>
+        <div className="flex justify-between items-center">
+          <div className="bg-violet-500/20 rounded-2xl p-3 border border-cyan-400/20 flex-1 mr-3">
+            <p className="text-sm text-cyan-200">✨ Crystal Energy: {crystalOfDay}</p>
+            {profile?.sun_sign && (
+              <p className="text-xs text-violet-200 mt-1">🌟 {profile.sun_sign} Sun • {profile.moon_sign} Moon</p>
+            )}
+          </div>
+          <button 
+            onClick={() => {
+              generatePersonalizedInsight();
+            }}
+            className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all text-sm"
+          >
+            Refresh Insight
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <QuickActionCard 
+          icon={Heart} 
+          title="Check-In" 
+          subtitle={hasCheckedIn ? "Complete" : "Set intention"}
+          onClick={() => setCurrentView('checkin')}
+          completed={hasCheckedIn}
+        />
+        <QuickActionCard 
+          icon={Sparkles} 
+          title="Affirmation" 
+          subtitle="Daily power"
+          onClick={() => setCurrentView('affirmation')}
+        />
+        <QuickActionCard 
+          icon={BookOpen} 
+          title="Journal" 
+          subtitle="Sacred space"
+          onClick={() => setCurrentView('journal')}
+        />
+        <QuickActionCard 
+          icon={Target} 
+          title="Vision Board" 
+          subtitle="Manifest dreams"
+          onClick={() => setCurrentView('visionboard')}
+        />
+      </div>
+
+      <div className="bg-black/20 backdrop-blur-md rounded-3xl p-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
+        <h3 className="text-lg font-semibold text-white mb-4">Your Challenges</h3>
+        {challenges.slice(0, 2).map(challenge => (
+          <div key={challenge.id} className="mb-4 last:mb-0">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-white font-medium">{challenge.title}</span>
+              <span className="text-cyan-200 text-sm">{challenge.progress}/{challenge.total}</span>
+            </div>
+            <div className="bg-slate-800/50 rounded-full h-2 border border-violet-500/30">
+              <div 
+                className="bg-gradient-to-r from-violet-400 via-purple-400 to-cyan-400 h-2 rounded-full transition-all shadow-sm"
+                style={{ 
+                  width: `${(challenge.progress / challenge.total) * 100}%`,
+                  filter: 'drop-shadow(0 0 4px rgba(139, 92, 246, 0.6))'
+                }}
+              />
+            </div>
+          </div>
+        ))}
+        <button 
+          onClick={() => setCurrentView('challenges')}
+          className="w-full mt-4 text-cyan-300 text-sm hover:text-cyan-200 transition-colors"
+        >
+          View All Challenges →
+        </button>
+      </div>
+    </div>
   );
 
   const QuickActionCard = ({ icon: Icon, title, subtitle, onClick, completed = false }) => (
@@ -569,7 +578,7 @@ const CosmicApp = () => {
               
               // Fetch astrology data if birth info is complete
               if (userProfile.birthDate && userProfile.birthLatitude && userProfile.birthLongitude) {
-                await fetchAstrologyData();
+                await fetchRealAstrologyData();
               }
               
               await generatePersonalizedInsight();
