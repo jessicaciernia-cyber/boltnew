@@ -1144,8 +1144,6 @@ const CosmicApp = () => {
       case 'profile':
         return <ProfileSetupView />;
       case 'rituals':
-      case 'ai-chat':
-        return <AIChatView />;
         return <RitualsView />;
       case 'challenges':
         return <ChallengesView />;
@@ -1154,6 +1152,165 @@ const CosmicApp = () => {
       default:
         return <Dashboard />;
     }
+  };
+
+  const AIChatView: React.FC = () => {
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [inputMessage, setInputMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const sendMessageToAI = async (message: string) => {
+      if (!message.trim()) return;
+
+      const userMessage: ChatMessage = { role: 'user', content: message };
+      setChatMessages(prev => [...prev, userMessage]);
+      setInputMessage('');
+      setLoading(true);
+
+      try {
+        const systemMessage = {
+          role: 'system',
+          content: `You are Luna, a wise and compassionate cosmic guide specializing in manifestation, mindset transformation, and astrology. You help users align with their highest potential through:
+
+- Manifestation techniques and law of attraction principles
+- Positive mindset shifts and limiting belief work
+- Astrological insights and cosmic guidance
+- Moon phases and planetary influences
+- Chakra alignment and energy work
+- Spiritual growth and self-discovery
+
+Always respond with warmth, wisdom, and practical guidance. Use cosmic and celestial metaphors naturally. Keep responses encouraging, insightful, and actionable. Address the user as "beautiful soul" or similar loving terms occasionally.`
+        };
+
+        const messages = [
+          systemMessage,
+          ...chatMessages.map(msg => ({ role: msg.role, content: msg.content })),
+          { role: 'user', content: message }
+        ];
+
+        const response = await axios.post('https://api.anthropic.com/v1/messages', {
+          model: 'claude-3-sonnet-20240229',
+          max_tokens: 1000,
+          messages: messages
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01'
+          }
+        });
+
+        const aiMessage: ChatMessage = {
+          role: 'assistant',
+          content: response.data.content[0].text
+        };
+
+        setChatMessages(prev => [...prev, aiMessage]);
+      } catch (error) {
+        console.error('Error sending message to AI:', error);
+        const errorMessage: ChatMessage = {
+          role: 'assistant',
+          content: 'I apologize, beautiful soul. The cosmic energies seem to be disrupted right now. Please try again in a moment. ✨'
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      sendMessageToAI(inputMessage);
+    };
+
+    return (
+      <CosmicBackground>
+        <div className="relative z-10 min-h-screen flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-violet-400/20">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className="flex items-center space-x-2 text-violet-300 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+            <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
+              <MessageSquare className="w-6 h-6 text-violet-300" />
+              <span>Luna - Your Cosmic Guide</span>
+            </h1>
+            <div className="w-16"></div>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {chatMessages.length === 0 && (
+              <div className="text-center py-12">
+                <Sparkles className="w-16 h-16 text-violet-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-white mb-2">Welcome to Your Cosmic Chat</h2>
+                <p className="text-slate-300 max-w-md mx-auto">
+                  Ask Luna about manifestation, astrology, mindset shifts, or any spiritual guidance you seek. 
+                  The universe is ready to share its wisdom with you. ✨
+                </p>
+              </div>
+            )}
+
+            {chatMessages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                    message.role === 'user'
+                      ? 'bg-gradient-to-r from-violet-500 to-cyan-500 text-white'
+                      : 'bg-white/10 backdrop-blur-md border border-violet-400/30 text-white'
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed">{message.content}</p>
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-white/10 backdrop-blur-md border border-violet-400/30 text-white px-4 py-3 rounded-2xl">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-violet-300 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-violet-300 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-violet-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-sm text-violet-300">Luna is channeling cosmic wisdom...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input Form */}
+          <div className="p-6 border-t border-violet-400/20">
+            <form onSubmit={handleSubmit} className="flex space-x-3">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Ask Luna about manifestation, astrology, or mindset..."
+                className="flex-1 bg-white/10 border border-violet-300/30 rounded-xl px-4 py-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300 transition-colors"
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                disabled={loading || !inputMessage.trim()}
+                className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white p-3 rounded-xl hover:from-violet-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </CosmicBackground>
+    );
   };
 
   return (
