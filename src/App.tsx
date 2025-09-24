@@ -1149,9 +1149,17 @@ const CosmicApp = () => {
       case 'challenges':
         return <ChallengesView />;
       case 'meditation':
-        return <MeditationView />;
+        return (
+          <CosmicBackground>
+            <AIChatView />
+          </CosmicBackground>
+        );
       default:
-        return <Dashboard />;
+        return (
+          <CosmicBackground>
+            <DashboardView />
+          </CosmicBackground>
+        );
     }
   };
 
