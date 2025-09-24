@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Moon, Sun, Heart, Sparkles, Target, BookOpen, Camera, Share2, Calendar, Clock, Users, Zap, Brain, Gift, TrendingUp, Award, Bell, Settings, User, Home, Search, Play, Pause, Volume2 } from 'lucide-react';
+import { Star, Moon, Sun, Calendar, MapPin, ArrowLeft, User, Home, MessageSquare, Send } from 'lucide-react';
 import AuthView from './components/AuthView';
+import CosmicBackground from './components/CosmicBackground';
 import { useAuth } from './hooks/useAuth';
 import { useProfile } from './hooks/useProfile';
 
