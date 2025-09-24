@@ -1144,6 +1144,8 @@ const CosmicApp = () => {
       case 'profile':
         return <ProfileSetupView />;
       case 'rituals':
+      case 'ai-chat':
+        return <AIChatView />;
         return <RitualsView />;
       case 'challenges':
         return <ChallengesView />;
