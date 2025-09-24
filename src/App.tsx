@@ -1,8 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Star, Moon, Sun, Heart, Sparkles, Target, BookOpen, Camera, Share2, Calendar, Clock, Users, Zap, Brain, Gift, TrendingUp, Award, Bell, Settings, User, Home, Search, Play, Pause, Volume2 } from 'lucide-react';
+import AuthView from './components/AuthView';
+import { useAuth } from './hooks/useAuth';
+import { useProfile } from './hooks/useProfile';
 
 const CosmicApp = () => {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { profile, loading: profileLoading, updateProfile } = useProfile(user);
+  
   const [currentView, setCurrentView] = useState('dashboard');
   const [dailyIntention, setDailyIntention] = useState('');
   const [moodRating, setMoodRating] = useState(0);
@@ -20,6 +25,9 @@ const CosmicApp = () => {
     birthDate: '',
     birthTime: '',
     birthLocation: '',
+    birthLatitude: 0,
+    birthLongitude: 0,
+    birthTimezone: 0,
     sunSign: '',
     moonSign: '',
     risingSign: ''
@@ -38,10 +46,7 @@ const CosmicApp = () => {
   const [newVisionTitle, setNewVisionTitle] = useState('');
   const [newVisionDescription, setNewVisionDescription] = useState('');
   const [selectedVisionCategory, setSelectedVisionCategory] = useState('career');
-
-  // Astrology API configuration
-  const ASTROLOGY_API_KEY = 'gdbZhlxy9sagGmcSWSC9P5qBvAaW9ogo9Ajeg66s';
-  const ASTROLOGY_BASE_URL = 'https://api.vedicastroapi.com/v3-json';
+  const [authHandled, setAuthHandled] = useState(false);
 
   const affirmations = [
     "I am aligned with my highest self and deepest desires",
@@ -100,12 +105,54 @@ const CosmicApp = () => {
   ];
 
   useEffect(() => {
+    console.log('🔄 Current view changed to:', currentView);
+  }, [currentView]);
+
+  // Update local state when profile loads
+  useEffect(() => {
+    if (profile && !authHandled) {
+      setUserProfile({
+        name: profile.name || 'Goddess',
+        birthDate: profile.birth_date || '',
+        birthTime: profile.birth_time || '',
+        birthLocation: profile.birth_location || '',
+        birthLatitude: profile.birth_latitude || 0,
+        birthLongitude: profile.birth_longitude || 0,
+        birthTimezone: profile.birth_timezone || 0,
+        sunSign: profile.sun_sign || '',
+        moonSign: profile.moon_sign || '',
+        risingSign: profile.rising_sign || ''
+      });
+      setAuthHandled(true);
+    }
+  }, [profile, authHandled]);
+
+  useEffect(() => {
     setCurrentAffirmation(affirmations[Math.floor(Math.random() * affirmations.length)]);
     setCrystalOfDay(crystals[Math.floor(Math.random() * crystals.length)]);
     setMoonPhase(moonPhases[Math.floor(Math.random() * moonPhases.length)]);
     generatePersonalizedInsight();
     fetchRealAstrologyData();
   }, []);
+
+  // Show loading screen while checking auth
+  if (authLoading) {
+    return (
+      <CosmicBackground>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <Sparkles className="w-16 h-16 text-violet-300 mx-auto mb-4 animate-pulse" />
+            <p className="text-white text-xl">Loading your cosmic journey...</p>
+          </div>
+        </div>
+      </CosmicBackground>
+    );
+  }
+
+  // Show auth view if not authenticated
+  if (!user) {
+    return <AuthView onAuthSuccess={() => setAuthHandled(false)} />;
+  }
 
   const fetchRealAstrologyData = async () => {
     setIsLoadingAstrology(true);
@@ -312,6 +359,12 @@ const CosmicApp = () => {
               <Bell className="w-5 h-5 text-cyan-300" />
             </div>
             <button 
+              onClick={signOut}
+              className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30 hover:bg-black/30 transition-all"
+            >
+              <User className="w-5 h-5 text-red-300" />
+            </button>
+            <button 
               onClick={() => setCurrentView('profile')}
               className="bg-black/20 backdrop-blur-md rounded-full p-2 border border-violet-400/30 hover:bg-black/30 transition-all"
             >
@@ -323,16 +376,15 @@ const CosmicApp = () => {
         <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 mb-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <Moon className="w-6 h-6 text-cyan-300 mx-auto mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' }} />
+              <Moon className="w-6 h-6 text-cyan-300 mx-auto mb-1" />
               <p className="text-xs text-cyan-200">{moonPhase}</p>
-              {isLoadingAstrology && <div className="text-xs text-violet-300">Loading...</div>}
             </div>
             <div>
-              <Sparkles className="w-6 h-6 text-violet-300 mx-auto mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.6))' }} />
+              <Sparkles className="w-6 h-6 text-violet-300 mx-auto mb-1" />
               <p className="text-xs text-violet-200">{currentStreak} Day Streak</p>
             </div>
             <div>
-              <Star className="w-6 h-6 text-white mx-auto mb-1" style={{ filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))' }} />
+              <Star className="w-6 h-6 text-white mx-auto mb-1" />
               <p className="text-xs text-slate-200">High Vibe</p>
             </div>
           </div>
@@ -340,9 +392,9 @@ const CosmicApp = () => {
 
         <div className="bg-black/20 backdrop-blur-md rounded-3xl p-6 mb-6 border border-violet-400/30 shadow-lg shadow-purple-500/20">
           <div className="flex items-center mb-4">
-            <Sparkles className="w-6 h-6 text-cyan-300 mr-2" style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' }} />
+            <Sparkles className="w-6 h-6 text-cyan-300 mr-2" />
             <h2 className="text-xl font-semibold text-white">Your Personal Cosmic Insight</h2>
-            {realAstrologyData && <span className="ml-2 text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full">Real Astrology</span>}
+            {profile?.sun_sign && <span className="ml-2 text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full">Personalized</span>}
           </div>
           <p className="text-slate-100 text-lg leading-relaxed mb-4">
             {todaysPersonalizedInsight || "Generating your personalized cosmic guidance using real astrological data..."}
@@ -350,19 +402,17 @@ const CosmicApp = () => {
           <div className="flex justify-between items-center">
             <div className="bg-violet-500/20 rounded-2xl p-3 border border-cyan-400/20 flex-1 mr-3">
               <p className="text-sm text-cyan-200">✨ Crystal Energy: {crystalOfDay}</p>
-              {realAstrologyData?.horoscope?.response?.prediction && (
-                <p className="text-xs text-violet-200 mt-1">🌟 Live Astrology Connected</p>
+              {profile?.sun_sign && (
+                <p className="text-xs text-violet-200 mt-1">🌟 {profile.sun_sign} Sun • {profile.moon_sign} Moon</p>
               )}
             </div>
             <button 
               onClick={() => {
-                fetchRealAstrologyData();
                 generatePersonalizedInsight();
               }}
-              disabled={isLoadingAstrology}
-              className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all text-sm disabled:opacity-50"
+              className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl font-semibold hover:from-violet-600 hover:to-cyan-600 transition-all text-sm"
             >
-              {isLoadingAstrology ? 'Loading...' : 'Refresh Insight'}
+              Refresh Insight
             </button>
           </div>
         </div>
@@ -460,27 +510,72 @@ const CosmicApp = () => {
               <input
                 placeholder="Your magical name"
                 value={userProfile.name}
-                onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
+                onChange={(e) => {
+                  const newProfile = {...userProfile, name: e.target.value};
+                  setUserProfile(newProfile);
+                }}
                 className="w-full bg-white/10 border border-violet-300/30 rounded-xl p-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300"
               />
               <input
                 type="date"
                 placeholder="Birth Date"
                 value={userProfile.birthDate}
-                onChange={(e) => setUserProfile({...userProfile, birthDate: e.target.value})}
+                onChange={(e) => {
+                  const newProfile = {...userProfile, birthDate: e.target.value};
+                  setUserProfile(newProfile);
+                }}
                 className="w-full bg-white/10 border border-violet-300/30 rounded-xl p-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300"
               />
               <input
                 type="time"
                 placeholder="Birth Time (optional)"
                 value={userProfile.birthTime}
-                onChange={(e) => setUserProfile({...userProfile, birthTime: e.target.value})}
+                onChange={(e) => {
+                  const newProfile = {...userProfile, birthTime: e.target.value};
+                  setUserProfile(newProfile);
+                }}
                 className="w-full bg-white/10 border border-violet-300/30 rounded-xl p-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300"
               />
               <input
                 placeholder="Birth Location (City, State)"
                 value={userProfile.birthLocation}
-                onChange={(e) => setUserProfile({...userProfile, birthLocation: e.target.value})}
+                onChange={(e) => {
+                  const newProfile = {...userProfile, birthLocation: e.target.value};
+                  setUserProfile(newProfile);
+                }}
+                className="w-full bg-white/10 border border-violet-300/30 rounded-xl p-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300"
+              />
+              <input
+                type="number"
+                step="0.0001"
+                placeholder="Birth Latitude (e.g., 40.7128)"
+                value={userProfile.birthLatitude || ''}
+                onChange={(e) => {
+                  const newProfile = {...userProfile, birthLatitude: parseFloat(e.target.value) || 0};
+                  setUserProfile(newProfile);
+                }}
+                className="w-full bg-white/10 border border-violet-300/30 rounded-xl p-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300"
+              />
+              <input
+                type="number"
+                step="0.0001"
+                placeholder="Birth Longitude (e.g., -74.0060)"
+                value={userProfile.birthLongitude || ''}
+                onChange={(e) => {
+                  const newProfile = {...userProfile, birthLongitude: parseFloat(e.target.value) || 0};
+                  setUserProfile(newProfile);
+                }}
+                className="w-full bg-white/10 border border-violet-300/30 rounded-xl p-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300"
+              />
+              <input
+                type="number"
+                step="0.5"
+                placeholder="Timezone Offset (e.g., -5 for EST)"
+                value={userProfile.birthTimezone || ''}
+                onChange={(e) => {
+                  const newProfile = {...userProfile, birthTimezone: parseFloat(e.target.value) || 0};
+                  setUserProfile(newProfile);
+                }}
                 className="w-full bg-white/10 border border-violet-300/30 rounded-xl p-3 text-white placeholder-slate-300 focus:outline-none focus:border-cyan-300"
               />
             </div>
@@ -507,7 +602,25 @@ const CosmicApp = () => {
 
           <button
             onClick={async () => {
-              await fetchRealAstrologyData();
+              // Save profile to database
+              await updateProfile({
+                name: userProfile.name,
+                birth_date: userProfile.birthDate || null,
+                birth_time: userProfile.birthTime || null,
+                birth_location: userProfile.birthLocation || null,
+                birth_latitude: userProfile.birthLatitude || null,
+                birth_longitude: userProfile.birthLongitude || null,
+                birth_timezone: userProfile.birthTimezone || null,
+                sun_sign: userProfile.sunSign || null,
+                moon_sign: userProfile.moonSign || null,
+                rising_sign: userProfile.risingSign || null,
+              });
+              
+              // Fetch astrology data if birth info is complete
+              if (userProfile.birthDate && userProfile.birthLatitude && userProfile.birthLongitude) {
+                await fetchAstrologyData();
+              }
+              
               await generatePersonalizedInsight();
               setCurrentView('dashboard');
             }}
@@ -568,17 +681,6 @@ const CosmicApp = () => {
             onClick={async () => {
               setHasCheckedIn(true);
               
-              // If user has birth info, get their personal chart
-              if (userProfile.birthDate) {
-                const birthChart = await getUserBirthChart(
-                  userProfile.birthDate, 
-                  userProfile.birthTime,
-                  28.6139, // Default to Delhi coordinates, could be improved with location
-                  77.2090
-                );
-                console.log('Birth chart data:', birthChart);
-              }
-              
               await generatePersonalizedInsight();
               setCurrentView('dashboard');
             }}
@@ -606,7 +708,7 @@ const CosmicApp = () => {
         </div>
 
         <div className="bg-black/20 backdrop-blur-md rounded-3xl p-8 border border-violet-400/30 text-center mb-6">
-          <Sparkles className="w-16 h-16 text-violet-300 mx-auto mb-6" style={{ filter: 'drop-shadow(0 0 12px rgba(139, 92, 246, 0.6))' }} />
+          <Sparkles className="w-16 h-16 text-violet-300 mx-auto mb-6" />
           <p className="text-2xl font-light text-white leading-relaxed mb-8">
             "{currentAffirmation}"
           </p>
@@ -698,7 +800,7 @@ const CosmicApp = () => {
           <>
             <div className="bg-black/20 backdrop-blur-md rounded-3xl p-6 border border-violet-400/30 mb-6">
               <div className="text-center py-8">
-                <Target className="w-16 h-16 text-violet-300 mx-auto mb-4" style={{ filter: 'drop-shadow(0 0 12px rgba(139, 92, 246, 0.6))' }} />
+                <Target className="w-16 h-16 text-violet-300 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-white mb-2">Create Your Vision</h2>
                 <p className="text-slate-300 mb-6">Start manifesting your dreams into reality</p>
                 <button 
@@ -1014,16 +1116,17 @@ const CosmicApp = () => {
 
   const NavButton = ({ icon: Icon, label, view }) => (
     <button
-      onClick={() => setCurrentView(view)}
+      onClick={() => {
+        console.log('🔘 NavButton clicked:', label, 'view:', view);
+        setCurrentView(view);
+      }}
       className={`flex flex-col items-center p-2 rounded-xl transition-all ${
         currentView === view 
-          ? 'bg-violet-500/30 text-cyan-300 shadow-lg shadow-violet-500/30' 
+          ? 'bg-violet-500/30 text-cyan-300' 
           : 'text-slate-300 hover:text-cyan-200'
       }`}
     >
-      <Icon className="w-5 h-5 mb-1" style={{ 
-        filter: currentView === view ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.6))' : 'none' 
-      }} />
+      <Icon className="w-5 h-5 mb-1" />
       <span className="text-xs">{label}</span>
     </button>
   );
@@ -1060,4 +1163,3 @@ const CosmicApp = () => {
 };
 
 export default CosmicApp;
-        
