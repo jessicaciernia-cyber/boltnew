@@ -141,8 +141,6 @@ const CosmicApp = () => {
     setCurrentAffirmation(affirmations[Math.floor(Math.random() * affirmations.length)]);
     setCrystalOfDay(crystals[Math.floor(Math.random() * crystals.length)]);
     setMoonPhase(moonPhases[Math.floor(Math.random() * moonPhases.length)]);
-    generatePersonalizedInsight();
-    fetchRealAstrologyData();
   }, []);
 
   // Show loading screen while checking auth
@@ -274,14 +272,14 @@ const CosmicApp = () => {
       - Crystal of the Day: ${crystalOfDay}
       - Real Astrological Insight: ${realHoroscope ? realHoroscope.substring(0, 200) : 'Focus on cosmic alignment'}
       - Birth Date: ${userProfile.birthDate || 'Not provided'}
-      
+
       Write a mystical, encouraging daily insight that feels personal and magical. Include:
       - How today's REAL cosmic energy affects them specifically
       - Reference the actual moon phase and its influence
       - One actionable spiritual guidance based on real astrology
       - A manifestation tip
       - Keep it under 150 words, warm and empowering
-      
+
       Format as a single paragraph that sounds like it's from their cosmic bestie who knows real astrology.`;
 
       const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -307,6 +305,11 @@ const CosmicApp = () => {
       setTodaysPersonalizedInsight(fallbackInsight);
     }
   };
+
+  useEffect(() => {
+    fetchRealAstrologyData();
+    generatePersonalizedInsight();
+  }, []);
 
   const DashboardView = () => (
     <div className="relative z-10 p-6 pb-24">
